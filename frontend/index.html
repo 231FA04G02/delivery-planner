@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DeliveryAI – Intelligent Route Planner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+<!-- ===================== NAVBAR ===================== -->
+<nav class="navbar">
+  <div class="nav-brand">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+      <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+      <path d="M2 17l10 5 10-5M2 12l10 5 10-5"/>
+    </svg>
+    DeliveryAI
+  </div>
+  <ul class="nav-links">
+    <li><a href="#hero">Home</a></li>
+    <li><a href="#wizard-section">Setup</a></li>
+    <li><a href="#about-section">About</a></li>
+  </ul>
+</nav>
+
+<!-- ===================== HERO ===================== -->
+<section class="hero" id="hero">
+  <div class="hero-content">
+    <div class="hero-badge">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+      A* Search · 2-opt Optimization · Custom Graph
+    </div>
+    <h1>Intelligent <span>Last-Mile</span><br>Delivery Planner</h1>
+    <p>Define your own city map — add locations, roads and deliveries — then let the AI find the optimal route.</p>
+    <div class="hero-cta">
+      <a href="#wizard-section" class="btn btn-primary btn-lg" onclick="scrollToSection('wizard-section')">
+        🚀 Start Planning
+      </a>
+      <a href="#about-section" class="btn btn-outline btn-lg" onclick="scrollToSection('about-section')">
+        How It Works
+      </a>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat"><strong>A*</strong><span>Informed Search</span></div>
+      <div class="hero-stat"><strong>2-opt</strong><span>Route Optimization</span></div>
+      <div class="hero-stat"><strong>Custom</strong><span>City Graph</span></div>
+      <div class="hero-stat"><strong>&lt;50ms</strong><span>Planning Time</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== WIZARD ===================== -->
+<div class="main-container" id="wizard-section">
+
+  <!-- Step Progress Bar -->
+  <div class="wizard-progress">
+    <div class="wizard-step active" id="wp-1" onclick="goToStep(1)">
+      <div class="wp-circle">1</div>
+      <div class="wp-label">Locations<br><small>Add nodes</small></div>
+    </div>
+    <div class="wp-connector"></div>
+    <div class="wizard-step" id="wp-2" onclick="goToStep(2)">
+      <div class="wp-circle">2</div>
+      <div class="wp-label">Roads<br><small>Add edges</small></div>
+    </div>
+    <div class="wp-connector"></div>
+    <div class="wizard-step" id="wp-3" onclick="goToStep(3)">
+      <div class="wp-circle">3</div>
+      <div class="wp-label">Deliveries<br><small>Add tasks</small></div>
+    </div>
+    <div class="wp-connector"></div>
+    <div class="wizard-step" id="wp-4" onclick="goToStep(4)">
+      <div class="wp-circle">4</div>
+      <div class="wp-label">Results<br><small>Run planner</small></div>
+    </div>
+  </div>
+
+  <!-- ===== STEP 1: NODES ===== -->
+  <div class="wizard-panel active" id="step-1">
+    <div class="section-header">
+      <div class="section-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+        Step 1 — Add Locations (Nodes)
+      </div>
+    </div>
+
+    <div class="grid-2" style="gap:1.5rem">
+      <!-- Add node form -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">➕ Add Location</div>
+        </div>
+        <div class="form-group">
+          <label>Node ID <span class="hint">(unique short key, e.g. A, depot, W1)</span></label>
+          <input type="text" id="n-id" placeholder="e.g. depot" maxlength="20">
+        </div>
+        <div class="form-group">
+          <label>Label <span class="hint">(display name)</span></label>
+          <input type="text" id="n-label" placeholder="e.g. Warehouse HQ">
+        </div>
+        <div class="input-row">
+          <div class="form-group">
+            <label>X Coordinate <span class="hint">(0–100)</span></label>
+            <input type="number" id="n-x" placeholder="e.g. 5" step="0.5" min="0" max="100">
+          </div>
+          <div class="form-group">
+            <label>Y Coordinate <span class="hint">(0–100)</span></label>
+            <input type="number" id="n-y" placeholder="e.g. 5" step="0.5" min="0" max="100">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Role</label>
+          <select id="n-role">
+            <option value="delivery">Delivery Stop</option>
+            <option value="depot">Depot (Start/End)</option>
+          </select>
+        </div>
+        <button class="btn btn-primary btn-block" onclick="addNode()">+ Add Location</button>
+        <p class="hint mt-2">💡 Add one <strong>Depot</strong> as the vehicle's start/end point, then add all delivery locations.</p>
+      </div>
+
+      <!-- Node list + live map preview -->
+      <div style="display:flex;flex-direction:column;gap:1rem">
+        <div class="card" style="flex:1">
+          <div class="card-header">
+            <div class="card-title">📍 Locations Added</div>
+            <span class="badge badge-info" id="node-count-badge">0 nodes</span>
+          </div>
+          <div id="node-list" class="empty-state">
+            <div class="empty-icon">📍</div>
+            <p>No locations yet. Add your first one on the left.</p>
+          </div>
+        </div>
+
+        <!-- Mini map preview -->
+        <div class="card" style="padding:0;overflow:hidden">
+          <div style="padding:.75rem 1rem;border-bottom:1px solid var(--border);font-weight:700;font-size:.88rem;">🗺️ Live Preview</div>
+          <canvas id="previewCanvas" width="500" height="280" style="width:100%;display:block"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="wizard-nav">
+      <div></div>
+      <button class="btn btn-primary btn-lg" onclick="goToStep(2)">Next: Add Roads →</button>
+    </div>
+  </div>
+
+  <!-- ===== STEP 2: EDGES ===== -->
+  <div class="wizard-panel" id="step-2">
+    <div class="section-header">
+      <div class="section-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        Step 2 — Add Roads (Edges)
+      </div>
+    </div>
+
+    <div class="grid-2" style="gap:1.5rem">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">➕ Add Road</div>
+        </div>
+        <div class="form-group">
+          <label>From Location</label>
+          <select id="e-source"></select>
+        </div>
+        <div class="form-group">
+          <label>To Location</label>
+          <select id="e-target"></select>
+        </div>
+        <div class="form-group">
+          <label>Distance (km)</label>
+          <input type="number" id="e-dist" placeholder="e.g. 2.5" step="0.1" min="0.1">
+        </div>
+        <button class="btn btn-primary btn-block" onclick="addEdge()">+ Add Road</button>
+        <p class="hint mt-2">💡 Roads are bidirectional. Distance is in kilometres.</p>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:1rem">
+        <div class="card" style="flex:1">
+          <div class="card-header">
+            <div class="card-title">🛣️ Roads Added</div>
+            <span class="badge badge-info" id="edge-count-badge">0 roads</span>
+          </div>
+          <div id="edge-list" class="empty-state">
+            <div class="empty-icon">🛣️</div>
+            <p>No roads yet. Add connections between your locations.</p>
+          </div>
+        </div>
+
+        <div class="card" style="padding:0;overflow:hidden">
+          <div style="padding:.75rem 1rem;border-bottom:1px solid var(--border);font-weight:700;font-size:.88rem;">🗺️ Live Preview</div>
+          <canvas id="previewCanvas2" width="500" height="280" style="width:100%;display:block"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="wizard-nav">
+      <button class="btn btn-secondary btn-lg" onclick="goToStep(1)">← Back</button>
+      <button class="btn btn-primary btn-lg" onclick="goToStep(3)">Next: Add Deliveries →</button>
+    </div>
+  </div>
+
+  <!-- ===== STEP 3: TASKS ===== -->
+  <div class="wizard-panel" id="step-3">
+    <div class="section-header">
+      <div class="section-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+          <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+        </svg>
+        Step 3 — Add Delivery Tasks
+      </div>
+    </div>
+
+    <div class="grid-2" style="gap:1.5rem">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">➕ Add Delivery</div>
+        </div>
+        <div class="form-group">
+          <label>Delivery Location</label>
+          <select id="t-node"></select>
+        </div>
+        <div class="input-row">
+          <div class="form-group">
+            <label>Earliest Arrival <span class="hint">(min from 08:00)</span></label>
+            <input type="number" id="t-earliest" placeholder="e.g. 0" min="0" max="720">
+          </div>
+          <div class="form-group">
+            <label>Latest Arrival <span class="hint">(min from 08:00)</span></label>
+            <input type="number" id="t-latest" placeholder="e.g. 120" min="0" max="720">
+          </div>
+        </div>
+        <div class="input-row">
+          <div class="form-group">
+            <label>Priority</label>
+            <select id="t-priority">
+              <option value="1">1 – High</option>
+              <option value="2" selected>2 – Medium</option>
+              <option value="3">3 – Low</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Package Weight (kg)</label>
+            <input type="number" id="t-weight" placeholder="e.g. 5" step="0.5" min="0.1">
+          </div>
+        </div>
+        <button class="btn btn-primary btn-block" onclick="addTask()">+ Add Delivery</button>
+
+        <div style="margin-top:1.25rem;padding:1rem;background:var(--bg);border-radius:8px;font-size:.84rem;color:var(--muted);line-height:1.7">
+          <strong style="color:var(--text)">Settings</strong>
+          <div class="form-group" style="margin-top:.75rem;margin-bottom:.75rem">
+            <label>Vehicle Capacity (kg)</label>
+            <input type="number" id="capacity-input" placeholder="e.g. 50" step="5" min="1">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label>Depot Node (vehicle start)</label>
+            <select id="depot-select"></select>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📦 Delivery Tasks</div>
+          <span class="badge badge-info" id="task-count-badge">0 tasks</span>
+        </div>
+        <div id="task-list" class="empty-state">
+          <div class="empty-icon">📦</div>
+          <p>No deliveries yet. Add tasks on the left.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="wizard-nav">
+      <button class="btn btn-secondary btn-lg" onclick="goToStep(2)">← Back</button>
+      <button class="btn btn-accent btn-lg" onclick="runAll()">🚀 Run Planner →</button>
+    </div>
+  </div>
+
+  <!-- ===== STEP 4: RESULTS ===== -->
+  <div class="wizard-panel" id="step-4">
+    <div class="section-header">
+      <div class="section-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Results
+      </div>
+      <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+        <button class="btn btn-secondary" onclick="goToStep(1)">← Edit Setup</button>
+        <button class="btn btn-primary" onclick="runAll()">↺ Re-run Planner</button>
+      </div>
+    </div>
+
+    <!-- Sub-tabs inside results -->
+    <div class="tab-bar tab-group" style="margin-bottom:1.5rem">
+      <button class="tab-btn active" data-tab="res-plan">🗺️ Route Plan</button>
+      <button class="tab-btn" data-tab="res-search">🔍 Path Search</button>
+      <button class="tab-btn" data-tab="res-eval">📊 Evaluation</button>
+    </div>
+
+    <!-- Route Plan -->
+    <div class="tab-panel active" id="res-plan">
+      <div style="display:grid;grid-template-columns:1fr 380px;gap:1.5rem;align-items:start">
+        <div>
+          <div class="map-wrapper" style="margin-bottom:1.5rem">
+            <canvas id="cityCanvas" width="700" height="455"></canvas>
+            <div class="map-legend">
+              <div class="legend-item"><div class="legend-dot" style="background:#1e3a8a"></div>Depot</div>
+              <div class="legend-item"><div class="legend-dot" style="background:#2563eb"></div>On Route</div>
+              <div class="legend-item"><div class="legend-dot" style="background:#94a3b8"></div>Other</div>
+              <div class="legend-item" style="margin-left:auto;color:var(--muted);font-size:.78rem">Hover nodes for info</div>
+            </div>
+          </div>
+          <div id="plan-results">
+            <div class="loader"><div class="spinner"></div>Running planner…</div>
+          </div>
+        </div>
+        <div id="plan-sidebar">
+          <div class="card">
+            <div class="card-title" style="margin-bottom:1rem">Map Legend</div>
+            <div style="display:flex;flex-direction:column;gap:.5rem;font-size:.84rem">
+              <div class="legend-item"><div class="legend-dot" style="background:#1e3a8a"></div>Depot (HQ)</div>
+              <div class="legend-item"><div class="legend-dot" style="background:#2563eb"></div>Scheduled Stop</div>
+              <div class="legend-item"><div class="legend-dot" style="background:#94a3b8"></div>Unvisited Node</div>
+              <div class="legend-item">
+                <div style="width:28px;height:3px;background:linear-gradient(90deg,#2563eb,#60a5fa);border-radius:2px;margin-right:.4rem"></div>
+                Optimised Route
+              </div>
+            </div>
+            <hr style="margin:1rem 0;border:none;border-top:1px solid var(--border)">
+            <div class="card-title" style="margin-bottom:.75rem">Algorithm</div>
+            <div style="font-size:.83rem;color:var(--muted);line-height:1.7">
+              <p><strong style="color:var(--primary)">A* Search</strong> finds the shortest road path between every pair of stops using a straight-line distance heuristic.</p>
+              <p style="margin-top:.6rem"><strong style="color:var(--primary)">Nearest-Neighbour</strong> greedily builds the initial visit order respecting capacity and priority.</p>
+              <p style="margin-top:.6rem"><strong style="color:var(--primary)">2-opt</strong> improves the sequence by reversing sub-tours until no gain is possible.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Path Search -->
+    <div class="tab-panel" id="res-search">
+      <div style="display:grid;grid-template-columns:300px 1fr;gap:1.5rem;align-items:start">
+        <div class="card">
+          <div class="card-header"><div class="card-title">🔍 Compare Algorithms</div></div>
+          <div class="form-group">
+            <label>Source Node</label>
+            <select id="search-source"></select>
+          </div>
+          <div class="form-group">
+            <label>Target Node</label>
+            <select id="search-target"></select>
+          </div>
+          <button class="btn btn-primary btn-block" onclick="runSearch()">Compare A*, BFS &amp; Dijkstra</button>
+          <div style="margin-top:1rem;font-size:.82rem;color:var(--muted);line-height:1.6">
+            <p><strong>A*</strong> – informed, uses heuristic, fewest nodes explored</p>
+            <p class="mt-1"><strong>BFS</strong> – uninformed, finds fewest hops</p>
+            <p class="mt-1"><strong>Dijkstra</strong> – uninformed, optimal cost, no heuristic</p>
+          </div>
+        </div>
+        <div id="search-results">
+          <div class="loader"><div class="spinner"></div>Select nodes and click Compare</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Evaluation -->
+    <div class="tab-panel" id="res-eval">
+      <div id="eval-results">
+        <div class="loader"><div class="spinner"></div>Run the planner first to see evaluation</div>
+      </div>
+    </div>
+
+  </div><!-- /step-4 -->
+
+</div><!-- /main-container -->
+
+<!-- ===================== ABOUT ===================== -->
+<section id="about-section" style="background:#fff;border-top:1px solid var(--border)">
+  <div class="main-container" style="padding-top:3rem;padding-bottom:3rem">
+    <h2 style="font-size:1.7rem;font-weight:800;margin-bottom:.5rem">How It Works</h2>
+    <p class="text-muted" style="margin-bottom:2.5rem;max-width:640px">
+      A two-stage AI pipeline — graph search for shortest paths, planning agent for delivery sequencing.
+    </p>
+    <div class="grid-3" style="gap:1.5rem;margin-bottom:2rem">
+      <div class="card">
+        <div style="font-size:2rem;margin-bottom:.75rem">🗺️</div>
+        <div style="font-weight:700;font-size:1.05rem;margin-bottom:.5rem">Custom City Graph</div>
+        <p class="text-muted" style="font-size:.88rem;line-height:1.7">You define every node (location with X,Y coordinates) and edge (road with distance). The system builds a NetworkX weighted graph from your input.</p>
+      </div>
+      <div class="card">
+        <div style="font-size:2rem;margin-bottom:.75rem">⭐</div>
+        <div style="font-weight:700;font-size:1.05rem;margin-bottom:.5rem">A* Informed Search</div>
+        <p class="text-muted" style="font-size:.88rem;line-height:1.7">A* uses h(n) = Euclidean distance to goal as a heuristic, expanding fewer states than BFS or Dijkstra while still returning the optimal path.</p>
+      </div>
+      <div class="card">
+        <div style="font-size:2rem;margin-bottom:.75rem">🤖</div>
+        <div style="font-weight:700;font-size:1.05rem;margin-bottom:.5rem">Planning Agent</div>
+        <p class="text-muted" style="font-size:.88rem;line-height:1.7">Nearest-neighbour builds an initial route respecting capacity and priority. 2-opt local search then improves it by reversing sub-sequences.</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">📚 Keywords</div></div>
+      <div style="display:flex;flex-wrap:wrap;gap:.5rem">
+        ${["A* Search","BFS","Dijkstra","Nearest-Neighbour","2-opt","Vehicle Routing","Time Windows","NetworkX","Flask","Python","Last-Mile Delivery","Heuristic Optimization","Planning Agent"].map(k=>`<span class="badge badge-info">${k}</span>`).join("")}
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p><strong>DeliveryAI</strong> – Intelligent Delivery Route &amp; Task Planning Agent</p>
+  <p style="margin-top:.4rem">Python · Flask · NetworkX · A* · 2-opt · HTML5 Canvas</p>
+</footer>
+
+<div id="toast-container"></div>
+<script src="/static/js/app.js"></script>
+</body>
+</html>
